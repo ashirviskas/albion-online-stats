@@ -11,6 +11,7 @@ class StandalonePlayerListItem:
     value: float
     value_per_second: float
     combat_state: int
+    gear_worth: int
 
 
 @dataclass
@@ -22,6 +23,7 @@ class PlayerListItem:
     best_value: Number
     percentage: Number
     combat_state: int
+    gear_worth: int
 
 
 def to_player_list_items(standalone_list: List[StandalonePlayerListItem]) -> List[PlayerListItem]:
@@ -44,7 +46,8 @@ def to_player_list_items(standalone_list: List[StandalonePlayerListItem]) -> Lis
             Number(item.value_per_second),
             Number(best),
             Number(percentage),
-            item.combat_state
+            item.combat_state,
+            item.gear_worth
         ))
 
     return combined_list

@@ -89,8 +89,8 @@ class ListItemView(QListView):
 
         def update(self, player):
             self.player = player
-            self.setText("{} {} ({}, {}%)".format(
-                self.player.name, self.player.value, self.player.value_per_second, self.player.percentage
+            self.setText("{} {} ({}, {}%) {:,}".format(
+                self.player.name, self.player.value, self.player.value_per_second, self.player.percentage, self.player.gear_worth
             ))
             self.refresh()
 

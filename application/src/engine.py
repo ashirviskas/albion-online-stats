@@ -37,6 +37,7 @@ class CombatStatType:
 class GameStats():
     def __init__(self):
         self.visibility = Visibility()
+        self.last_update = 0
 
         self.zone = {
             StatType.Combat: combat_stats.CombatStats(self.visibility),
@@ -55,6 +56,7 @@ class GameStats():
         }
 
     def register_event(self, event):
+        print(event)
         if event[ev_consts.EvKeyName] == ev_consts.EvNameEnterCombat:
             if self.zone[StatType.Combat].party_combat_state() == combat_state.CombatState.OutOfCombat:
                 self._construct_new_stats([VisibilityType.LastFight])
@@ -65,12 +67,19 @@ class GameStats():
             self.history[StatType.Time].update(self.zone[StatType.Time])
 
             self._construct_new_stats([VisibilityType.Zone])
+            self.last_update = 0
+
+        # No zone change required, finally
+        # if self.last_update > 5:
+        #     self._construct_new_stats([VisibilityType.Zone])
+        #     self.last_update = 0
 
         self.zone[StatType.Combat].receive(event)
         self.last_fight[StatType.Combat].receive(event)
         self.zone[StatType.Fame].receive(event)
         self.last_fight[StatType.Fame].receive(event)
         self.visibility.receive(event)
+        self.last_update += 1
 
     def reset(self, stat_type):
         if stat_type == VisibilityType.Zone:

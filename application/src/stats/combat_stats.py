@@ -10,6 +10,7 @@
 from dataclasses import field
 from dataclasses import dataclass
 from typing import Optional, List, Callable, Iterable
+import asyncio
 
 from . import time_utils
 from ..event_receiver import CombatEventReceiver, VisibilityEventReceiver
@@ -17,6 +18,7 @@ from .statistics import Stats
 from .list_item import PlayerListItem, StandalonePlayerListItem, to_player_list_items
 from .visibility import Visibility
 from .combat_state import CombatState
+from .item_price import get_gear_price
 
 
 @dataclass
@@ -52,7 +54,12 @@ class Player(Stats):
     healing_done: float = 0.0
     combat_time: CombatTime = field(default_factory=lambda: CombatTime())
     combat_state: int = CombatState.OutOfCombat
-    active: bool  = False
+    active: bool = False
+    gear_worth: int = 0
+
+    def calculate_gear_worth(self):
+        self.gear_worth = get_gear_price(list(self.items.values()))
+        print('Name: ', self.name, ', Gear worth: ', self.gear_worth)
 
     def activate(self):
         self.active = True
@@ -79,10 +86,13 @@ class Player(Stats):
         self.combat_time.entered_combat = other.combat_time.entered_combat
         self.combat_time.time_in_combat += other.combat_time.time_in_combat
         self.items = other.items
+        self.gear_worth = other.gear_worth
         self.active = other.active or self.active
 
     def register_items(self, value):
         self.items = value
+        self.calculate_gear_worth()
+        # print(value)
 
     def register_damage_done(self, value):
         if self.combat_state == CombatState.OutOfCombat:
@@ -110,11 +120,11 @@ class Player(Stats):
 
     def into_damage_list_item(self) -> StandalonePlayerListItem:
         return StandalonePlayerListItem(
-            self.name, self.items, self.damage_done, self.dps, self.combat_state)
+            self.name, self.items, self.damage_done, self.dps, self.combat_state, self.gear_worth)
 
     def into_healing_list_item(self) -> StandalonePlayerListItem:
         return StandalonePlayerListItem(
-            self.name, self.items, self.healing_done, self.hps, self.combat_state)
+            self.name, self.items, self.healing_done, self.hps, self.combat_state, self.gear_worth)
 
     @property
     def time_in_combat(self):
@@ -193,7 +203,13 @@ class CombatStats(CombatEventReceiver, Stats):
         return self.party.combat_state()
 
     def visible_players(self) -> Iterable[Player]:
-        return (player for player in self.players.values() if player.is_active() and self.visibility.test(player.name))
+        players = (player for player in self.players.values())
+        # print("pre: ", [player.name for player in players])
+        # active = [player for player in players if player.is_active()]
+        # print("active: ", [player.name for player in active])
+        # visible = (player for player in active if self.visibility.test(player.name))
+        # print("visible: ", [player.name for player in visible])
+        return players
 
     def on_player_appeared(self, id: int, name: str):
         if id not in self.players:
